@@ -104,7 +104,7 @@
 
         .json-panel textarea {
             flex: 1;
-            min-height: 300px;
+            min-height: 500px;
             border: none;
             padding: 0.8em;
             font-family: monospace;
@@ -336,48 +336,88 @@
             showMessage(json_formatter_txt.msg_copied);
         }
 
-        // Escape Unicode
-        function escapeUnicode() {
-            const input = document.getElementById("json-input").value;
-            if (!input) return showMessage(json_formatter_txt.empty_content);
-
-            let result = "";
-            for (let i = 0; i < input.length; i++) {
-                const ch = input[i];
-                const code = input.charCodeAt(i);
-
-                if (code > 127) {
-                    result += "\\\\u" + code.toString(16).padStart(4, "0");
-                } else {
-                    switch (ch) {
-                        case '"': result += '\\"'; break;
-                        case '\\': result += '\\\\'; break;
-                        case '\n': result += '\\n'; break;
-                        case '\r': result += '\\r'; break;
-                        case '\t': result += '\\t'; break;
-                        default: result += ch;
-                    }
-                }
-            }
-
-            document.getElementById("json-input").value = result;
-            showMessage(json_formatter_txt.unicode_escaped);
-            checkUnicodeTools();
-        }
-
-        // Unescape Unicode
         function unescapeUnicode() {
             const input = document.getElementById("json-input").value;
             if (!input) return showMessage(json_formatter_txt.empty_content);
 
-            let result = input
-                .replace(/\\\\u([\dA-Fa-f]{4})/g, (_, g) => String.fromCharCode(parseInt(g, 16)))
-                .replace(/\\u([\dA-Fa-f]{4})/g, (_, g) => String.fromCharCode(parseInt(g, 16)))
-                .replace(/\\"/g, '"')
-                .replace(/\\\\/g, '\\');
+            let obj;
+            try {
+                // Try strict JSON first
+                obj = JSON.parse(input);
+            } catch (err) {
+                try {
+                    // Fallback: replace \" with " and try again
+                    const normalized = input.replace(/\\"/g, '"');
+                    obj = JSON.parse(normalized);
+                } catch (e) {
+                    return showMessage("❌ " + e.message);
+                }
+            }
 
-            document.getElementById("json-input").value = result;
+            // Recursively decode all string values
+            function decodeStr(val) {
+                if (typeof val === "string") {
+                    return val
+                        .replace(/\\\\u([\dA-Fa-f]{4})/g, (_, g) =>
+                            String.fromCharCode(parseInt(g, 16))
+                        )
+                        .replace(/\\u([\dA-Fa-f]{4})/g, (_, g) =>
+                            String.fromCharCode(parseInt(g, 16))
+                        );
+                } else if (Array.isArray(val)) {
+                    return val.map(decodeStr);
+                } else if (val && typeof val === "object") {
+                    const res = {};
+                    for (const k in val) res[k] = decodeStr(val[k]);
+                    return res;
+                }
+                return val;
+            }
+
+            const decoded = decodeStr(obj);
+
+            document.getElementById("json-input").value = JSON.stringify(decoded, null, 2);
             showMessage(json_formatter_txt.msg_unescape);
+        }
+
+        function escapeUnicode() {
+            const input = document.getElementById("json-input").value;
+            if (!input) return showMessage(json_formatter_txt.empty_content);
+
+            try {
+                const obj = JSON.parse(input);
+
+                // Recursively encode string values and keys
+                function encodeStr(val) {
+                    if (typeof val === "string") {
+                        return val.split("").map(ch => {
+                            const code = ch.charCodeAt(0);
+                            return code > 127
+                                ? "\\u" + code.toString(16).padStart(4, "0")
+                                : ch;
+                        }).join("");
+                    } else if (Array.isArray(val)) {
+                        return val.map(encodeStr);
+                    } else if (val && typeof val === "object") {
+                        const res = {};
+                        for (const k in val) {
+                            // Encode both key and value
+                            const newKey = encodeStr(k);
+                            res[newKey] = encodeStr(val[k]);
+                        }
+                        return res;
+                    }
+                    return val;
+                }
+
+                const encoded = encodeStr(obj);
+            
+                document.getElementById("json-input").value = JSON.stringify(encoded, null, 2);
+                showMessage(json_formatter_txt.unicode_escaped);
+
+            } catch (e) {
+                showMessage("❌ " + e.message);
+            }
         }
 
         // ===== Clear =====
