@@ -297,10 +297,35 @@
             if (!input) return showMessage(json_formatter_txt.empty_content);
 
             let result = "";
+
             for (let i = 0; i < input.length; i++) {
-                const c = input.charCodeAt(i);
-                // 中文等非 ASCII 转成双反斜杠 \\uXXXX
-                result += c > 127 ? "\\\\u" + c.toString(16).padStart(4, "0") : input[i];
+                const ch = input[i];
+                const code = input.charCodeAt(i);
+
+                if (code > 127) {
+                    // 中文等非 ASCII 转成 \\uXXXX
+                    result += "\\\\u" + code.toString(16).padStart(4, "0");
+                } else {
+                    switch (ch) {
+                        case '"':
+                            result += '\\"'; // 转义双引号
+                            break;
+                        case '\\':
+                            result += '\\\\'; // 转义反斜杠
+                            break;
+                        case '\n':
+                            result += '\\n'; // 转义换行
+                            break;
+                        case '\r':
+                            result += '\\r'; // 转义回车
+                            break;
+                        case '\t':
+                            result += '\\t'; // 转义制表符
+                            break;
+                        default:
+                            result += ch;
+                    }
+                }
             }
 
             document.getElementById("json-output").value = result;
@@ -319,19 +344,24 @@
             }
         }
 
+
         function unescapeUnicode() {
             const input = document.getElementById("json-input").value;
             if (!input) return showMessage(json_formatter_txt.empty_content);
 
-            const result = input
-                // 先处理双斜杠 \\uXXXX
+            let result = input
+                // 处理双斜杠 \\uXXXX
                 .replace(/\\\\u([\dA-Fa-f]{4})/g, (_, g) =>
                     String.fromCharCode(parseInt(g, 16))
                 )
-                // 再处理单斜杠 \uXXXX
+                // 处理单斜杠 \uXXXX
                 .replace(/\\u([\dA-Fa-f]{4})/g, (_, g) =>
                     String.fromCharCode(parseInt(g, 16))
-                );
+                )
+                // 处理转义的引号 \" → "
+                .replace(/\\"/g, '"')
+                // 处理转义的反斜杠 \\ → \
+                .replace(/\\\\/g, '\\');
 
             document.getElementById("json-output").value = result;
             showMessage(json_formatter_txt.msg_unescape);
@@ -348,6 +378,7 @@
                 }
             }
         }
+
 
         function cnToUnicode() {
             escapeUnicode();
@@ -441,7 +472,7 @@
         function checkUnicodeTools() {
             const val = document.getElementById("json-input").value;
             const unicodeFloat = document.getElementById("unicode-float");
-            if (/[\u4e00-\u9fa5]/.test(val) || /\\u[0-9a-fA-F]{4}/.test(val)) {
+            if (/[\u4e00-\u9fa5]/.test(val) || /\\u[0-9a-fA-F]{4}/.test(val) || /\\\"/.test(val)) {
                 unicodeFloat.style.display = "flex";
             } else {
                 unicodeFloat.style.display = "none";
