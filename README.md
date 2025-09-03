@@ -70,8 +70,7 @@ Canonical & `hreflang` tags are automatically injected for `/zh/` and `/en/` rou
 
 - Unicode Conversion Tools  
 
-  ![Tree View Screenshot](docs/images/screenshot-unicode-conversion-tools-0.png)
-  ![Tree View Screenshot](docs/images/screenshot-unicode-conversion-tools-1.png)
+  ![Tree View Screenshot](docs/images/screenshot-unicode-conversion-tools.png)
 
 ---
 

@@ -23,7 +23,7 @@
         <p class="sub">Supports beautify, minify, validate, tree view, and Unicode conversion.</p>
 
         <div class="json-tool">
-            <!-- 原始区域 -->
+            <!-- Input panel -->
             <div class="json-panel">
                 <div class="panel-header">
                     Input JSON
@@ -32,22 +32,24 @@
                 <textarea id="json-input" placeholder="Paste your JSON here…"></textarea>
             </div>
 
-            <!-- 结果区域 -->
+            <!-- Result panel -->
             <div class="json-panel">
                 <div class="panel-header">
                     Result JSON
                     <button class="btn-clear" onclick="clearOutput()" title="Clear output">🗑</button>
                 </div>
-                <textarea id="json-output" placeholder="Result will appear here…" readonly=""></textarea>
+                <textarea id="json-output" placeholder="Result will appear here…" readonly></textarea>
             </div>
         </div>
 
-        <!-- JSON 操作按钮 -->
+        <!-- JSON action buttons -->
         <div class="json-actions">
             <div class="json-panel" style="flex-direction: row;">
                 <button class="btn" onclick="formatJson()">Format</button>
                 <button class="btn" onclick="minifyJson()">Minify</button>
                 <button class="btn" onclick="validateJson()">Validate</button>
+                <button class="btn" onclick="unescapeUnicode()" id="unicode-button">Unescape Unicode</button>
+                <button class="btn" onclick="escapeUnicode()">Escape Unicode</button>
             </div>
             <div class="json-panel" style="flex-direction: row;">
                 <button class="btn" onclick="copyJson()">Copy Result</button>
@@ -55,7 +57,7 @@
             </div>
         </div>
 
-        <!-- 树形弹窗 -->
+        <!-- Tree modal -->
         <div id="treeModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeModal('treeModal')">×</span>
@@ -64,13 +66,6 @@
             </div>
         </div>
 
-        <!-- Unicode 工具浮动 -->
-        <div id="unicode-float" class="unicode-float">
-            <button class="btn-small" onclick="escapeUnicode()">Chinese → Unicode</button>
-            <button class="btn-small" onclick="unescapeUnicode()">Unicode → Chinese</button>
-            <button class="btn-small" onclick="cnToUnicode()">Escape Unicode</button>
-            <button class="btn-small" onclick="unicodeToCn()">Unescape Unicode</button>
-        </div>
     </section>
 
     <style>
@@ -131,7 +126,7 @@
             margin: 10px
         }
 
-        /* 弹窗 */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -159,7 +154,7 @@
             cursor: pointer;
         }
 
-        /* 树形样式 */
+        /* Tree styles */
         .json-tree {
             font-family: monospace;
             font-size: 0.9em;
@@ -210,7 +205,7 @@
             margin-left: 4px;
         }
 
-        /* 移动端 */
+        /* Mobile */
         @media (max-width: 768px) {
             .json-tool {
                 grid-template-columns: 1fr;
@@ -221,37 +216,90 @@
             }
         }
 
-        .unicode-float {
-            position: absolute;
-            bottom: 70px;
-            right: -150px;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            z-index: 1100;
+        /* Default button (disabled or inactive) */
+        #unicode-button {
+        background: #fff;
+        color: #2563eb;
+        border: 1px solid #2563eb;
+        cursor: not-allowed;
+        opacity: 0.7;
         }
 
-        .unicode-float .btn-small {
-            padding: 4px 8px;
-            font-size: 0.8em;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--card);
+        /* Active state */
+        #unicode-button.active {
+        background: #2563eb;
+        color: #fff;
+        cursor: pointer;
+        opacity: 1;
+        transition: all 0.2s ease;
+        }
+
+        #unicode-button.active:hover {
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        #unicode-button {
+            background: #101631;
+            color: #3b82f6;
+            border: 1px solid #30384d;
+        }
+        #unicode-button.active {
+            background: #3b82f6;
+            color: #fff;
+        }
         }
     </style>
 
     <script>
+        // Language pack (English)
+        const json_formatter_txt = {
+            "btn_clear": "Clear",
+            "btn_copy": "Copy Result",
+            "btn_escape": "Chinese → Unicode",
+            "btn_escape_alias": "Escape Unicode",
+            "btn_format": "Format",
+            "btn_minify": "Minify",
+            "btn_tree": "Tree View",
+            "btn_unescape": "Unicode → Chinese",
+            "btn_unescape_alias": "Unescape Unicode",
+            "btn_validate": "Validate",
+            "clear_input": "Clear input",
+            "clear_input_success": "Input cleared",
+            "clear_output": "Clear output",
+            "clear_output_success": "Output cleared",
+            "empty_content": "⚠️ Empty content",
+            "input_placeholder": "Paste your JSON here…",
+            "json_invalid": "❌ Invalid JSON, cannot render tree",
+            "msg_cleared": "🗑 Cleared",
+            "msg_copied": "📋 Copied to clipboard",
+            "msg_empty": "⚠️ Nothing to copy",
+            "msg_escape": "✅ Unicode escaped",
+            "msg_invalid": "❌ Invalid JSON: {error}",
+            "msg_no_tree_to_view": "⚠️ No tree to view",
+            "msg_unescape": "✅ Unicode decoded",
+            "msg_valid": "✅ JSON is valid!",
+            "no_content_copy": "⚠️ No content to copy",
+            "output_placeholder": "Result will appear here…",
+            "panel_input": "Input JSON",
+            "panel_output": "Result JSON",
+            "panel_tree": "Tree View",
+            "seo_desc": "Free online JSON tool for beautifying, minifying, validating, tree view, and Unicode conversion.",
+            "seo_title": "JSON Formatter - Beautify, Minify, Validate | tool.tl",
+            "subtitle": "Supports beautify, minify, validate, tree view, and Unicode conversion.",
+            "title": "JSON Formatter Tool",
+            "tree_update_failed": "⚠️ Tree update failed",
+            "unicode_decoded": "✅ Unicode decoded",
+            "unicode_escaped": "✅ Escaped to Unicode (double slashes)"
+        };
 
-        // 服务端渲染，把语言包对象转成 JSON 注入
-        const json_formatter_txt = {"btn_clear": "Clear", "btn_copy": "Copy Result", "btn_escape": "Chinese \u2192 Unicode", "btn_escape_alias": "Escape Unicode", "btn_format": "Format", "btn_minify": "Minify", "btn_tree": "Tree View", "btn_unescape": "Unicode \u2192 Chinese", "btn_unescape_alias": "Unescape Unicode", "btn_validate": "Validate", "clear_input": "Clear input", "clear_input_success": "Clear input Success", "clear_output": "Clear output", "clear_output_success": "Clear output Success", "empty_content": "\u26a0\ufe0f Empty content", "input_placeholder": "Paste your JSON here\u2026", "json_invalid": "\u274c Invalid JSON, cannot render tree", "msg_cleared": "\ud83d\uddd1 Cleared", "msg_copied": "\ud83d\udccb Copied to clipboard", "msg_empty": "\u26a0\ufe0f Nothing to copy", "msg_escape": "\u2705 Unicode escaped", "msg_invalid": "\u274c Invalid JSON: {error}", "msg_no_tree_to_view": "\u26a0\ufe0f No tree to view", "msg_unescape": "\u2705 Unicode decoded", "msg_valid": "\u2705 JSON is valid!", "no_content_copy": "\u26a0\ufe0f No content to copy", "output_placeholder": "Result will appear here\u2026", "panel_input": "Input JSON", "panel_output": "Result JSON", "panel_tree": "Tree View", "seo_desc": "Free online JSON tool for beautifying, minifying, validating, tree view, and Unicode conversion. Supports beautify, minify, validate, tree view, and Unicode conversion.", "seo_title": "JSON Formatter - Beautify, Minify, Validate | tool.tl", "subtitle": "Supports beautify, minify, validate, tree view, and Unicode conversion.", "title": "JSON Formatter Tool", "tree_update_failed": "\u26a0\ufe0f Tree update failed", "unicode_decoded": "\u2705 Unicode decoded", "unicode_escaped": "\u2705 Escaped to Unicode (double slashes)"};
-
-        // ===== JSON 功能 =====
+        // ===== JSON Functions =====
         function formatJson() {
             const input = document.getElementById("json-input").value;
             if (!input) return showMessage(json_formatter_txt.empty_content);
-
             try {
-                const obj = JSON.parse(document.getElementById("json-input").value);
+                const obj = JSON.parse(input);
                 document.getElementById("json-output").value = JSON.stringify(obj, null, 2);
             } catch (e) {
                 showMessage("❌ " + e.message);
@@ -261,10 +309,8 @@
         function minifyJson() {
             const input = document.getElementById("json-input").value;
             if (!input) return showMessage(json_formatter_txt.empty_content);
-
-
             try {
-                const obj = JSON.parse(document.getElementById("json-input").value);
+                const obj = JSON.parse(input);
                 document.getElementById("json-output").value = JSON.stringify(obj);
             } catch (e) {
                 showMessage("❌ " + e.message);
@@ -272,12 +318,10 @@
         }
 
         function validateJson() {
-
             const input = document.getElementById("json-input").value;
             if (!input) return showMessage(json_formatter_txt.empty_content);
-
             try {
-                JSON.parse(document.getElementById("json-input").value);
+                JSON.parse(input);
                 showMessage(json_formatter_txt.msg_valid);
             } catch (e) {
                 showMessage("❌ " + e.message);
@@ -292,103 +336,51 @@
             showMessage(json_formatter_txt.msg_copied);
         }
 
+        // Escape Unicode
         function escapeUnicode() {
             const input = document.getElementById("json-input").value;
             if (!input) return showMessage(json_formatter_txt.empty_content);
 
             let result = "";
-
             for (let i = 0; i < input.length; i++) {
                 const ch = input[i];
                 const code = input.charCodeAt(i);
 
                 if (code > 127) {
-                    // 中文等非 ASCII 转成 \\uXXXX
                     result += "\\\\u" + code.toString(16).padStart(4, "0");
                 } else {
                     switch (ch) {
-                        case '"':
-                            result += '\\"'; // 转义双引号
-                            break;
-                        case '\\':
-                            result += '\\\\'; // 转义反斜杠
-                            break;
-                        case '\n':
-                            result += '\\n'; // 转义换行
-                            break;
-                        case '\r':
-                            result += '\\r'; // 转义回车
-                            break;
-                        case '\t':
-                            result += '\\t'; // 转义制表符
-                            break;
-                        default:
-                            result += ch;
+                        case '"': result += '\\"'; break;
+                        case '\\': result += '\\\\'; break;
+                        case '\n': result += '\\n'; break;
+                        case '\r': result += '\\r'; break;
+                        case '\t': result += '\\t'; break;
+                        default: result += ch;
                     }
                 }
             }
 
-            document.getElementById("json-output").value = result;
+            document.getElementById("json-input").value = result;
             showMessage(json_formatter_txt.unicode_escaped);
-
-            // 如果树形弹窗打开，尝试更新
-            if (document.getElementById("treeModal").style.display === "block") {
-                try {
-                    const obj = JSON.parse(result);
-                    const target = document.getElementById("modal-json-tree");
-                    target.innerHTML = "";
-                    target.appendChild(buildTree(obj));
-                } catch (e) {
-                    showMessage(json_formatter_txt.tree_update_failed + e.message);
-                }
-            }
+            checkUnicodeTools();
         }
 
-
+        // Unescape Unicode
         function unescapeUnicode() {
             const input = document.getElementById("json-input").value;
             if (!input) return showMessage(json_formatter_txt.empty_content);
 
             let result = input
-                // 处理双斜杠 \\uXXXX
-                .replace(/\\\\u([\dA-Fa-f]{4})/g, (_, g) =>
-                    String.fromCharCode(parseInt(g, 16))
-                )
-                // 处理单斜杠 \uXXXX
-                .replace(/\\u([\dA-Fa-f]{4})/g, (_, g) =>
-                    String.fromCharCode(parseInt(g, 16))
-                )
-                // 处理转义的引号 \" → "
+                .replace(/\\\\u([\dA-Fa-f]{4})/g, (_, g) => String.fromCharCode(parseInt(g, 16)))
+                .replace(/\\u([\dA-Fa-f]{4})/g, (_, g) => String.fromCharCode(parseInt(g, 16)))
                 .replace(/\\"/g, '"')
-                // 处理转义的反斜杠 \\ → \
                 .replace(/\\\\/g, '\\');
 
-            document.getElementById("json-output").value = result;
+            document.getElementById("json-input").value = result;
             showMessage(json_formatter_txt.msg_unescape);
-
-            // 如果树形弹窗打开，尝试更新
-            if (document.getElementById("treeModal").style.display === "block") {
-                try {
-                    const obj = JSON.parse(result);
-                    const target = document.getElementById("modal-json-tree");
-                    target.innerHTML = "";
-                    target.appendChild(buildTree(obj));
-                } catch (e) {
-                    showMessage(json_formatter_txt.tree_update_failed + e.message);
-                }
-            }
         }
 
-
-        function cnToUnicode() {
-            escapeUnicode();
-        }
-
-        function unicodeToCn() {
-            unescapeUnicode();
-        }
-
-        // ===== 清空 =====
+        // ===== Clear =====
         function clearInput() {
             document.getElementById("json-input").value = "";
             showMessage(json_formatter_txt.clear_input_success);
@@ -400,13 +392,12 @@
             showMessage(json_formatter_txt.clear_output_success);
         }
 
-        // ===== 树形查看 =====
+        // ===== Tree View =====
         function renderTree() {
-
             const output = document.getElementById("json-output");
             if (!output.value) return showMessage(json_formatter_txt.msg_no_tree_to_view);
 
-            let raw = document.getElementById("json-output").value || document.getElementById("json-input").value;
+            let raw = output.value || document.getElementById("json-input").value;
             let obj;
             try {
                 obj = JSON.parse(raw);
@@ -457,7 +448,7 @@
             }
         }
 
-        // ===== 弹窗 =====
+        // ===== Modal =====
         function openModal(id) {
             document.getElementById(id).style.display = "block";
         }
@@ -466,16 +457,30 @@
             document.getElementById(id).style.display = "none";
         }
 
-        // ===== Unicode工具浮动显示 =====
+        // ===== Unicode button state =====
         document.getElementById("json-input").addEventListener("input", checkUnicodeTools);
 
         function checkUnicodeTools() {
             const val = document.getElementById("json-input").value;
-            const unicodeFloat = document.getElementById("unicode-float");
-            if (/[\u4e00-\u9fa5]/.test(val) || /\\u[0-9a-fA-F]{4}/.test(val) || /\\\"/.test(val)) {
-                unicodeFloat.style.display = "flex";
+            const unicodeBtn = document.getElementById("unicode-button");
+
+            if (!val) {
+                unicodeBtn.disabled = true;
+                unicodeBtn.classList.remove("active");
+                return;
+            }
+
+            const canProcess = /[\u4e00-\u9fa5]/.test(val) ||
+                               /\\u[0-9a-fA-F]{4}/.test(val) ||
+                               /\\"/.test(val) ||
+                               /\\\\/.test(val);
+
+            if (canProcess) {
+                unicodeBtn.disabled = false;
+                unicodeBtn.classList.add("active");
             } else {
-                unicodeFloat.style.display = "none";
+                unicodeBtn.disabled = true;
+                unicodeBtn.classList.remove("active");
             }
         }
     </script>
