@@ -1,0 +1,456 @@
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> JSON Formatter - Beautify, Minify, Validate | tool.tl </title>
+  <link rel="stylesheet" href="/static/assets/style.css">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/static/favicon.png" type="image/png" sizes="32x32">
+    <meta name="description" content="Free online JSON tool for beautifying, minifying, validating, tree view, and Unicode conversion. Supports beautify, minify, validate, tree view, and Unicode conversion.">
+
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/popper.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/utils.js"></script>
+
+</head>
+<body>
+<div class="wrap">
+  <meta name="color-scheme" content="light dark">
+
+  <main>
+    <section id="main" class="panel" style="position: relative">
+        <h1 class="h1">JSON Formatter Tool</h1>
+        <p class="sub">Supports beautify, minify, validate, tree view, and Unicode conversion.</p>
+
+        <div class="json-tool">
+            <!-- 原始区域 -->
+            <div class="json-panel">
+                <div class="panel-header">
+                    Input JSON
+                    <button class="btn-clear" onclick="clearInput()" title="Clear input">🗑</button>
+                </div>
+                <textarea id="json-input" placeholder="Paste your JSON here…"></textarea>
+            </div>
+
+            <!-- 结果区域 -->
+            <div class="json-panel">
+                <div class="panel-header">
+                    Result JSON
+                    <button class="btn-clear" onclick="clearOutput()" title="Clear output">🗑</button>
+                </div>
+                <textarea id="json-output" placeholder="Result will appear here…" readonly=""></textarea>
+            </div>
+        </div>
+
+        <!-- JSON 操作按钮 -->
+        <div class="json-actions">
+            <div class="json-panel" style="flex-direction: row;">
+                <button class="btn" onclick="formatJson()">Format</button>
+                <button class="btn" onclick="minifyJson()">Minify</button>
+                <button class="btn" onclick="validateJson()">Validate</button>
+            </div>
+            <div class="json-panel" style="flex-direction: row;">
+                <button class="btn" onclick="copyJson()">Copy Result</button>
+                <button class="btn" onclick="renderTree()">Tree View</button>
+            </div>
+        </div>
+
+        <!-- 树形弹窗 -->
+        <div id="treeModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('treeModal')">×</span>
+                <h2>Tree View</h2>
+                <div id="modal-json-tree" class="json-tree"></div>
+            </div>
+        </div>
+
+        <!-- Unicode 工具浮动 -->
+        <div id="unicode-float" class="unicode-float">
+            <button class="btn-small" onclick="escapeUnicode()">Chinese → Unicode</button>
+            <button class="btn-small" onclick="unescapeUnicode()">Unicode → Chinese</button>
+            <button class="btn-small" onclick="cnToUnicode()">Escape Unicode</button>
+            <button class="btn-small" onclick="unicodeToCn()">Unescape Unicode</button>
+        </div>
+    </section>
+
+    <style>
+        .json-tool {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+            margin-top: 1em;
+        }
+
+        .json-panel {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card);
+        }
+
+        .panel-header {
+            padding: 0.5em 0.8em;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-clear {
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .json-panel textarea {
+            flex: 1;
+            min-height: 300px;
+            border: none;
+            padding: 0.8em;
+            font-family: monospace;
+            font-size: 0.9em;
+            resize: none;
+            background: var(--card);
+            color: var(--text);
+        }
+
+        .json-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+            margin-top: 1em;
+        }
+
+        .json-actions .btn {
+            flex: 1;
+            margin: 10px
+        }
+
+        /* 弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card);
+            margin: 5% auto;
+            padding: 1em;
+            border-radius: var(--radius);
+            width: 90%;
+            height: 80%;
+            overflow: auto;
+        }
+
+        .close {
+            float: right;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        /* 树形样式 */
+        .json-tree {
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .json-tree ul {
+            list-style: none;
+            padding-left: 1em;
+        }
+
+        .json-tree li {
+            margin: 2px 0;
+            white-space: nowrap;
+        }
+
+        .json-tree .key {
+            color: var(--accent);
+        }
+
+        .json-tree .string {
+            color: #16a34a;
+        }
+
+        .json-tree .number {
+            color: #2563eb;
+        }
+
+        .json-tree .boolean {
+            color: #d97706;
+        }
+
+        .json-tree .null {
+            color: #6b7280;
+        }
+
+        .json-tree .toggle {
+            cursor: pointer;
+            margin-right: 4px;
+        }
+
+        .json-tree .collapsed > ul {
+            display: none;
+        }
+
+        .json-tree .meta {
+            color: #999;
+            font-size: 0.8em;
+            margin-left: 4px;
+        }
+
+        /* 移动端 */
+        @media (max-width: 768px) {
+            .json-tool {
+                grid-template-columns: 1fr;
+            }
+
+            .json-actions {
+                grid-column: span 1;
+            }
+        }
+
+        .unicode-float {
+            position: absolute;
+            bottom: 70px;
+            right: -150px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 1100;
+        }
+
+        .unicode-float .btn-small {
+            padding: 4px 8px;
+            font-size: 0.8em;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--card);
+        }
+    </style>
+
+    <script>
+
+        // 服务端渲染，把语言包对象转成 JSON 注入
+        const json_formatter_txt = {"btn_clear": "Clear", "btn_copy": "Copy Result", "btn_escape": "Chinese \u2192 Unicode", "btn_escape_alias": "Escape Unicode", "btn_format": "Format", "btn_minify": "Minify", "btn_tree": "Tree View", "btn_unescape": "Unicode \u2192 Chinese", "btn_unescape_alias": "Unescape Unicode", "btn_validate": "Validate", "clear_input": "Clear input", "clear_input_success": "Clear input Success", "clear_output": "Clear output", "clear_output_success": "Clear output Success", "empty_content": "\u26a0\ufe0f Empty content", "input_placeholder": "Paste your JSON here\u2026", "json_invalid": "\u274c Invalid JSON, cannot render tree", "msg_cleared": "\ud83d\uddd1 Cleared", "msg_copied": "\ud83d\udccb Copied to clipboard", "msg_empty": "\u26a0\ufe0f Nothing to copy", "msg_escape": "\u2705 Unicode escaped", "msg_invalid": "\u274c Invalid JSON: {error}", "msg_no_tree_to_view": "\u26a0\ufe0f No tree to view", "msg_unescape": "\u2705 Unicode decoded", "msg_valid": "\u2705 JSON is valid!", "no_content_copy": "\u26a0\ufe0f No content to copy", "output_placeholder": "Result will appear here\u2026", "panel_input": "Input JSON", "panel_output": "Result JSON", "panel_tree": "Tree View", "seo_desc": "Free online JSON tool for beautifying, minifying, validating, tree view, and Unicode conversion. Supports beautify, minify, validate, tree view, and Unicode conversion.", "seo_title": "JSON Formatter - Beautify, Minify, Validate | tool.tl", "subtitle": "Supports beautify, minify, validate, tree view, and Unicode conversion.", "title": "JSON Formatter Tool", "tree_update_failed": "\u26a0\ufe0f Tree update failed", "unicode_decoded": "\u2705 Unicode decoded", "unicode_escaped": "\u2705 Escaped to Unicode (double slashes)"};
+
+        // ===== JSON 功能 =====
+        function formatJson() {
+            const input = document.getElementById("json-input").value;
+            if (!input) return showMessage(json_formatter_txt.empty_content);
+
+            try {
+                const obj = JSON.parse(document.getElementById("json-input").value);
+                document.getElementById("json-output").value = JSON.stringify(obj, null, 2);
+            } catch (e) {
+                showMessage("❌ " + e.message);
+            }
+        }
+
+        function minifyJson() {
+            const input = document.getElementById("json-input").value;
+            if (!input) return showMessage(json_formatter_txt.empty_content);
+
+
+            try {
+                const obj = JSON.parse(document.getElementById("json-input").value);
+                document.getElementById("json-output").value = JSON.stringify(obj);
+            } catch (e) {
+                showMessage("❌ " + e.message);
+            }
+        }
+
+        function validateJson() {
+
+            const input = document.getElementById("json-input").value;
+            if (!input) return showMessage(json_formatter_txt.empty_content);
+
+            try {
+                JSON.parse(document.getElementById("json-input").value);
+                showMessage(json_formatter_txt.msg_valid);
+            } catch (e) {
+                showMessage("❌ " + e.message);
+            }
+        }
+
+        function copyJson() {
+            const output = document.getElementById("json-output");
+            if (!output.value) return showMessage(json_formatter_txt.no_content_copy);
+            output.select();
+            document.execCommand("copy");
+            showMessage(json_formatter_txt.msg_copied);
+        }
+
+        function escapeUnicode() {
+            const input = document.getElementById("json-input").value;
+            if (!input) return showMessage(json_formatter_txt.empty_content);
+
+            let result = "";
+            for (let i = 0; i < input.length; i++) {
+                const c = input.charCodeAt(i);
+                // 中文等非 ASCII 转成双反斜杠 \\uXXXX
+                result += c > 127 ? "\\\\u" + c.toString(16).padStart(4, "0") : input[i];
+            }
+
+            document.getElementById("json-output").value = result;
+            showMessage(json_formatter_txt.unicode_escaped);
+
+            // 如果树形弹窗打开，尝试更新
+            if (document.getElementById("treeModal").style.display === "block") {
+                try {
+                    const obj = JSON.parse(result);
+                    const target = document.getElementById("modal-json-tree");
+                    target.innerHTML = "";
+                    target.appendChild(buildTree(obj));
+                } catch (e) {
+                    showMessage(json_formatter_txt.tree_update_failed + e.message);
+                }
+            }
+        }
+
+        function unescapeUnicode() {
+            const input = document.getElementById("json-input").value;
+            if (!input) return showMessage(json_formatter_txt.empty_content);
+
+            const result = input
+                // 先处理双斜杠 \\uXXXX
+                .replace(/\\\\u([\dA-Fa-f]{4})/g, (_, g) =>
+                    String.fromCharCode(parseInt(g, 16))
+                )
+                // 再处理单斜杠 \uXXXX
+                .replace(/\\u([\dA-Fa-f]{4})/g, (_, g) =>
+                    String.fromCharCode(parseInt(g, 16))
+                );
+
+            document.getElementById("json-output").value = result;
+            showMessage(json_formatter_txt.msg_unescape);
+
+            // 如果树形弹窗打开，尝试更新
+            if (document.getElementById("treeModal").style.display === "block") {
+                try {
+                    const obj = JSON.parse(result);
+                    const target = document.getElementById("modal-json-tree");
+                    target.innerHTML = "";
+                    target.appendChild(buildTree(obj));
+                } catch (e) {
+                    showMessage(json_formatter_txt.tree_update_failed + e.message);
+                }
+            }
+        }
+
+        function cnToUnicode() {
+            escapeUnicode();
+        }
+
+        function unicodeToCn() {
+            unescapeUnicode();
+        }
+
+        // ===== 清空 =====
+        function clearInput() {
+            document.getElementById("json-input").value = "";
+            showMessage(json_formatter_txt.clear_input_success);
+            checkUnicodeTools();
+        }
+
+        function clearOutput() {
+            document.getElementById("json-output").value = "";
+            showMessage(json_formatter_txt.clear_output_success);
+        }
+
+        // ===== 树形查看 =====
+        function renderTree() {
+
+            const output = document.getElementById("json-output");
+            if (!output.value) return showMessage(json_formatter_txt.msg_no_tree_to_view);
+
+            let raw = document.getElementById("json-output").value || document.getElementById("json-input").value;
+            let obj;
+            try {
+                obj = JSON.parse(raw);
+            } catch (e) {
+                return showMessage(json_formatter_txt.json_invalid);
+            }
+            const target = document.getElementById("modal-json-tree");
+            target.innerHTML = "";
+            target.appendChild(buildTree(obj));
+            openModal('treeModal');
+        }
+
+        function buildTree(obj) {
+            const ul = document.createElement("ul");
+            if (Array.isArray(obj)) {
+                obj.forEach((val, i) => {
+                    const li = document.createElement("li");
+                    renderNode(li, i, val, true);
+                    ul.appendChild(li);
+                });
+            } else {
+                for (const key in obj) {
+                    const li = document.createElement("li");
+                    renderNode(li, key, obj[key], false);
+                    ul.appendChild(li);
+                }
+            }
+            return ul;
+        }
+
+        function renderNode(li, key, val, isArray) {
+            if (typeof val === "object" && val !== null) {
+                const span = document.createElement("span");
+                span.className = "toggle";
+                span.textContent = "▶";
+                span.onclick = () => {
+                    li.classList.toggle("collapsed");
+                    span.textContent = li.classList.contains("collapsed") ? "▶" : "▼";
+                };
+                li.appendChild(span);
+                li.innerHTML += `<span class="key">${isArray ? "[" + key + "]" : '"' + key + '"'}</span>: {<span class="meta">${Array.isArray(val) ? "Array[" + val.length + "]" : "Object"}</span>`;
+                li.appendChild(buildTree(val));
+                li.innerHTML += "}";
+            } else {
+                let typeClass = typeof val;
+                if (val === null) typeClass = "null";
+                li.innerHTML = `<span class="key">${isArray ? "[" + key + "]" : '"' + key + '"'}</span>: <span class="${typeClass}">${JSON.stringify(val)}</span> <span class="meta">(${typeClass})</span>`;
+            }
+        }
+
+        // ===== 弹窗 =====
+        function openModal(id) {
+            document.getElementById(id).style.display = "block";
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = "none";
+        }
+
+        // ===== Unicode工具浮动显示 =====
+        document.getElementById("json-input").addEventListener("input", checkUnicodeTools);
+
+        function checkUnicodeTools() {
+            const val = document.getElementById("json-input").value;
+            const unicodeFloat = document.getElementById("unicode-float");
+            if (/[\u4e00-\u9fa5]/.test(val) || /\\u[0-9a-fA-F]{4}/.test(val)) {
+                unicodeFloat.style.display = "flex";
+            } else {
+                unicodeFloat.style.display = "none";
+            }
+        }
+    </script>
+</main>
+
+</div>
+<div id="global-message" class="global-message"></div>
+
+</body></html>
