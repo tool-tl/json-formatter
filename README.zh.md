@@ -1,6 +1,6 @@
 # JSON 格式化工具 (JSON Formatter Tool)
 
-[🇬🇧 English](README.md) | [🇨🇳 中文](README.zh.md)
+[🇺🇸 English](README.md) | [🇨🇳 中文](README.zh.md)
 
 极简在线 JSON 工具，支持 **美化、压缩、校验、树形查看与 Unicode 转换**。  
 无需任何后端依赖，直接在浏览器运行。

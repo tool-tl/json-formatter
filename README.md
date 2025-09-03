@@ -1,6 +1,6 @@
 # JSON Formatter Tool
 
-[🇬🇧 English](README.md) | [🇨🇳 中文](README.zh.md)
+[🇺🇸 English](README.md) | [🇨🇳 中文](README.zh.md)
 
 An ultra-lightweight web-based JSON formatter.  
 Supports **beautify, minify, validate, tree view, and Unicode conversion**.  
