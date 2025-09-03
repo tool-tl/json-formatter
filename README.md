@@ -1,5 +1,7 @@
 # JSON Formatter Tool
 
+[🇬🇧 English](README.md) | [🇨🇳 中文](README.zh.md)
+
 An ultra-lightweight web-based JSON formatter.  
 Supports **beautify, minify, validate, tree view, and Unicode conversion**.  
 No backend dependencies — works directly in the browser.
@@ -60,11 +62,16 @@ Canonical & `hreflang` tags are automatically injected for `/zh/` and `/en/` rou
 
 ## 📸 Screenshots
 
-*(replace with actual screenshots)*
-
 - Input / Output Panels  
+  ![Input/Output Screenshot](docs/images/screenshot-input-output.png)
+
 - JSON Tree View  
+  ![Tree View Screenshot](docs/images/screenshot-tree.png)
+
 - Unicode Conversion Tools  
+
+  ![Tree View Screenshot](docs/images/screenshot-unicode-conversion-tools-0.png)
+  ![Tree View Screenshot](docs/images/screenshot-unicode-conversion-tools-1.png)
 
 ---
 
@@ -73,7 +80,3 @@ Canonical & `hreflang` tags are automatically injected for `/zh/` and `/en/` rou
 MIT License © [tool-tl](https://tool.tl)
 
 ---
-
-## 📚 Documentation
-
-- [中文版说明 (Chinese README)](README.zh.md)
